@@ -1,0 +1,76 @@
+
+//+------------------------------------------------------------------+
+//|                      Twin Range Filter by colinmck MT4            |
+//|            https://www.forexroboteasy.com - Forex Robot Easy Team |
+//+------------------------------------------------------------------+
+
+#property strict
+
+//+------------------------------------------------------------------+
+//|                        Indicator Inputs                           |
+//+------------------------------------------------------------------+
+input int RangePeriod = 10;  // Period for calculating the range
+input double RangeMultiplier = 1.5;  // Multiplier for the range
+input ENUM_APPLIED_PRICE PriceType = PRICE_CLOSE;  // Price type for range calculation
+
+//+------------------------------------------------------------------+
+//|                       Indicator Buffers                           |
+//+------------------------------------------------------------------+
+double ExtUpperBuffer[];
+double ExtLowerBuffer[];
+
+//+------------------------------------------------------------------+
+//|                   Indicator Initialization                       |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    //--- indicator buffers mapping
+    SetIndexBuffer(0, ExtUpperBuffer, INDICATOR_DATA);
+    SetIndexBuffer(1, ExtLowerBuffer, INDICATOR_DATA);
+
+    //--- set indicator line labels
+    SetIndexLabel(0, 'Upper Range');
+    SetIndexLabel(1, 'Lower Range');
+
+    //--- set indicator short name
+    IndicatorShortName('TRF by colinmck');
+
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//|                     Indicator Calculation                         |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+    //--- check for bars count
+    if(rates_total < RangePeriod)
+        return(0);
+
+    //--- calculate the range
+    for(int i = prev_calculated; i < rates_total; i++)
+    {
+        double range = 0;
+        for(int j = i - RangePeriod + 1; j <= i; j++)
+        {
+            double high_low = high[j] - low[j];
+            if(high_low > range)
+                range = high_low;
+        }
+
+        ExtUpperBuffer[i] = high[i] + range * RangeMultiplier;
+        ExtLowerBuffer[i] = low[i] - range * RangeMultiplier;
+    }
+
+    //--- return value of prev_calculated for next call
+    return(rates_total);
+}
